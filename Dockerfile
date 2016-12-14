@@ -1,12 +1,14 @@
 FROM alpine
 MAINTAINER Nathan Douglas <docker@tenesm.us>
-RUN set -xe && \
-  apk add --no-cache \
-    tftp-hpa \
-    syslinux
-EXPOSE 69
+RUN set -xe \
+  && apk add --no-cache --virtual syslinux_and_stuff\
+    syslinux \
+  && cp -r /usr/share/syslinux/ /tftp \
+  && find /tftp -type f -exec chmod 0444 {} + \
+  && apk del syslinux_and_stuff \
+  && apk add --no-cache tftp-hpa \
+  && adduser -D tftp
+EXPOSE 69/udp
 VOLUME /tftp
-RUN cp /usr/share/syslinux/pxelinux.0 /tftp/ \
-  && cp /usr/share/syslinux/ldlinux.c32 /tftp/
-USER nobody
-CMD /usr/sbin/in.tftpd --foreground --user nobody --address 0.0.0.0:69 --secure /tftp -vvvv
+ENTRYPOINT ["/usr/sbin/in.tftpd"]
+CMD ["-L","-u","tftp","--secure","/tftp","--verbose"]
