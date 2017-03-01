@@ -1,9 +1,23 @@
 FROM alpine
 MAINTAINER Nathan Douglas <docker@tenesm.us>
 RUN set -xe \
-  && apk add --no-cache --virtual syslinux_and_stuff syslinux \
+  && apk add --no-cache --virtual tmp_stuff \
+    syslinux \
+    gcc \
+    binutils \
+    make \
+    perl \
+    libc-dev \
+    xz-dev \
+    git \
   && cp -r /usr/share/syslinux /tftp \
-  && apk del syslinux_and_stuff \
+  && git clone git://git.ipxe.org/ipxe.git \
+  && cd ipxe/src \
+  && make bin/ipxe.lkrn \
+  && cp bin/ipxe.lkrn /tftp/ \
+  && cd / \
+  && rm -rf /ipxe \
+  && apk del tmp_stuff \
   && apk add --no-cache tftp-hpa \
   && adduser -D tftp \
   && mkdir -p /tftp/pxelinux.cfg \
